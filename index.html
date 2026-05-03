@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Something for You 💙</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Pacifico&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #FFD700;
+    --gold-light: #FFF0A0;
+    --gold-dark: #C8960C;
+    --blue: #1a78e6;
+    --blue-light: #5BB8FF;
+    --blue-deep: #0a2a6e;
+    --white: #fff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Dancing Script', cursive;
+    background: var(--blue-deep);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== ENTRY SCREEN ===== */
+  #entry-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #0d1b4b 0%, #030a1f 100%);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  #entry-screen.fade-out {
+    opacity: 0; transform: scale(1.08); pointer-events: none;
+  }
+
+  .entry-title {
+    color: var(--gold);
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(1.5rem, 5vw, 2.8rem);
+    margin-bottom: 2rem;
+    text-align: center;
+    text-shadow: 0 0 30px #FFD70088;
+    padding: 0 1rem;
+    animation: floatText 3s ease-in-out infinite;
+  }
+
+  @keyframes floatText {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .heart-btn {
+    width: 120px; height: 120px;
+    background: none; border: none; cursor: pointer;
+    position: relative; animation: heartbeat 1.4s ease-in-out infinite;
+    transition: transform 0.2s;
+  }
+
+  .heart-btn:active { transform: scale(0.9); }
+
+  @keyframes heartbeat {
+    0%,100% { transform: scale(1); }
+    14% { transform: scale(1.15); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.1); }
+    70% { transform: scale(1); }
+  }
+
+  .heart-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px #1a78e6cc); }
+
+  .tap-hint {
+    color: var(--blue-light);
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    opacity: 0.8;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 0.8; } 50% { opacity: 0.3; }
+  }
+
+  /* Stars on entry */
+  .stars { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .star {
+    position: absolute; background: white; border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite var(--delay);
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.1; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+
+  /* ===== MAIN APP ===== */
+  #app {
+    display: none;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 20% 80%, #0a2a6e44 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, #1a3a8044 0%, transparent 50%),
+      linear-gradient(160deg, #030a1f 0%, #0d1b4b 40%, #0a1535 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Gold background ornament */
+  #app::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 10% 20%, #FFD70011 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, #FFD70011 0%, transparent 40%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FFD700' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  .app-content { position: relative; z-index: 1; }
+
+  /* ===== PHASE HEADERS ===== */
+  .phase-header {
+    text-align: center; padding: 3rem 1rem 1.5rem;
+    color: var(--gold);
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    text-shadow: 0 0 40px #FFD700aa, 0 2px 4px #00000088;
+  }
+
+  .phase-sub {
+    text-align: center;
+    color: var(--blue-light);
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+  }
+
+  /* ===== BOXES GRID ===== */
+  #boxes-phase { padding-bottom: 3rem; }
+
+  .boxes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1.5rem;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .mystery-box {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #1a3a80 0%, #0d1b4b 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 18px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 20px #00000055, inset 0 1px 0 #FFD70033;
+  }
+
+  .mystery-box::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, #FFD70000, #FFD70000);
+    transition: background 0.4s;
+    border-radius: inherit;
+  }
+
+  .mystery-box:not(.locked):hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 8px 32px #FFD70044, 0 0 0 1px #FFD700;
+  }
+
+  .mystery-box.locked {
+    cursor: default; opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+
+  .mystery-box.flash-open::before {
+    background: radial-gradient(circle at center, #FFD700cc 0%, #FFD70022 60%, transparent 80%);
+    animation: goldenFlash 0.7s ease-out forwards;
+  }
+
+  @keyframes goldenFlash {
+    0% { opacity: 0; transform: scale(0.3); }
+    40% { opacity: 1; transform: scale(1.5); }
+    100% { opacity: 0; transform: scale(2); }
+  }
+
+  .mystery-box.opened {
+    background: linear-gradient(135deg, #2a1800 0%, #1a0d00 100%);
+    border-color: var(--gold);
+    box-shadow: 0 0 20px #FFD70066, inset 0 0 30px #FFD70011;
+    cursor: default;
+  }
+
+  .box-number {
+    font-family: 'Pacifico', cursive;
+    font-size: 2.5rem;
+    color: var(--gold);
+    text-shadow: 0 0 15px #FFD700aa;
+    transition: opacity 0.3s;
+  }
+
+  .box-icon {
+    font-size: 1.8rem;
+    margin-top: 0.3rem;
+    color: var(--gold-light);
+  }
+
+  .mystery-box.opened .box-number { opacity: 0.3; }
+
+  .box-checkmark {
+    position: absolute; top: 8px; right: 10px;
+    font-size: 1.1rem; color: var(--gold);
+    opacity: 0; transition: opacity 0.4s 0.6s;
+  }
+  .mystery-box.opened .box-checkmark { opacity: 1; }
+
+  /* ===== MESSAGE OVERLAY ===== */
+  #msg-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+    backdrop-filter: blur(6px);
+  }
+
+  #msg-overlay.visible {
+    opacity: 1; pointer-events: all;
+  }
+
+  .msg-card {
+    background: linear-gradient(145deg, #0d1b4b, #1a3a80);
+    border: 2px solid var(--gold);
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    max-width: 420px; width: 100%;
+    text-align: center;
+    box-shadow: 0 0 60px #FFD70055, 0 20px 60px #00000088;
+    position: relative; overflow: hidden;
+  }
+
+  .msg-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at top, #FFD70011 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .msg-box-num {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.2rem;
+    color: var(--gold-dark);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .msg-text {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    color: var(--gold);
+    line-height: 1.6;
+    text-shadow: 0 0 20px #FFD70055;
+    margin: 1rem 0 2rem;
+  }
+
+  .cupid-btn {
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    border: none; border-radius: 50px;
+    padding: 0.8rem 2rem;
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.3rem;
+    color: #1a0d00;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    box-shadow: 0 4px 20px #FFD70066;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .cupid-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 30px #FFD700aa;
+  }
+
+  .cupid-btn:active { transform: scale(0.97); }
+
+  .cupid-arrow { font-size: 1.5rem; }
+
+  /* ===== PROPOSAL PHASE ===== */
+  #proposal-phase {
+    display: none; padding: 2rem 1rem 3rem;
+    text-align: center;
+  }
+
+  .rings-container {
+    display: flex; align-items: center; justify-content: center;
+    gap: 2rem; margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+
+  .ring-svg-wrap {
+    animation: floatRing 3s ease-in-out infinite;
+  }
+  .ring-svg-wrap:nth-child(3) { animation-delay: 0.5s; }
+
+  @keyframes floatRing {
+    0%,100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-12px) rotate(5deg); }
+  }
+
+  .ring-heart { font-size: 2.5rem; animation: floatRing 2.5s ease-in-out infinite; }
+
+  .proposal-text {
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    color: var(--gold);
+    text-shadow: 0 0 40px #FFD700bb, 0 2px 4px #00000066;
+    margin: 2rem 0;
+    animation: popIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(0.5); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  .answer-btns {
+    display: flex; gap: 1.5rem; justify-content: center;
+    flex-wrap: wrap; margin-top: 2rem;
+  }
+
+  .answer-btn {
+    width: 110px; height: 110px;
+    border-radius: 50%; border: none; cursor: pointer;
+    font-family: 'Pacifico', cursive;
+    font-size: 1.3rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0.3rem;
+    box-shadow: 0 6px 24px #00000055;
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    animation: popIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .answer-btn:hover { transform: scale(1.12); }
+  .answer-btn:active { transform: scale(0.96); }
+
+  .btn-yes {
+    background: radial-gradient(circle at 35% 35%, #c0f0c0, #1aaa44);
+    color: #003311;
+    border: 3px solid #88ff99;
+    animation-delay: 0.2s;
+  }
+
+  .btn-no {
+    background: radial-gradient(circle at 35% 35%, #f0c0c0, #aa2222);
+    color: #330011;
+    border: 3px solid #ff9999;
+    animation-delay: 0.4s;
+  }
+
+  /* Ring shape around buttons */
+  .answer-btn::before {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 3px dashed currentColor;
+    opacity: 0.4;
+    animation: spin 8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== RESULT SCREENS ===== */
+  #result-yes, #result-no {
+    display: none;
+    position: fixed; inset: 0; z-index: 900;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    text-align: center; padding: 2rem;
+  }
+
+  #result-yes {
+    background: radial-gradient(ellipse at center, #0d1b4b, #030a1f);
+  }
+
+  #result-no {
+    background: radial-gradient(ellipse at center, #1a0d0d, #0a0000);
+  }
+
+  .result-text {
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(1.8rem, 6vw, 3.2rem);
+    animation: popIn 1s cubic-bezier(0.34,1.56,0.64,1) both 0.5s;
+    opacity: 0;
+  }
+
+  #result-yes .result-text { color: var(--gold); text-shadow: 0 0 40px #FFD700aa; }
+  #result-no .result-text { color: #ffaaaa; text-shadow: 0 0 20px #ff444466; }
+
+  .result-emoji {
+    font-size: 4rem;
+    animation: popIn 1s cubic-bezier(0.34,1.56,0.64,1) both 1s;
+    opacity: 0; margin-top: 1rem;
+  }
+
+  /* ===== HEARTS FLYING ===== */
+  .flying-heart {
+    position: fixed;
+    font-size: 1.5rem;
+    pointer-events: none;
+    z-index: 950;
+    animation: flyHeart var(--dur) ease-out var(--delay) both;
+  }
+
+  @keyframes flyHeart {
+    0% {
+      opacity: 1;
+      transform: translate(0,0) scale(0.5) rotate(var(--rot));
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(calc(var(--rot) + 360deg));
+    }
+  }
+
+  /* ===== GOLDEN PARTICLES ===== */
+  .gold-particle {
+    position: fixed;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    pointer-events: none;
+    z-index: 490;
+    animation: goldFloat var(--dur) ease-out var(--delay) both;
+  }
+
+  @keyframes goldFloat {
+    0% { opacity: 1; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  }
+
+  /* ===== AMBIENT FLOATING HEARTS ===== */
+  .ambient-heart {
+    position: fixed;
+    font-size: var(--size);
+    opacity: 0.15;
+    pointer-events: none; z-index: 0;
+    animation: ambientFloat var(--dur) ease-in-out infinite var(--delay);
+  }
+
+  @keyframes ambientFloat {
+    0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.15; }
+    90% { opacity: 0.15; }
+    100% { transform: translateY(-10vh) rotate(20deg); opacity: 0; }
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 480px) {
+    .boxes-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .msg-card { padding: 2rem 1.2rem; }
+  }
+
+  /* Ring SVG styles */
+  .ring-svg { filter: drop-shadow(0 0 12px #C0C0C088); }
+</style>
+</head>
+<body>
+
+<!-- ENTRY SCREEN -->
+<div id="entry-screen">
+  <div class="stars" id="stars-container"></div>
+  <p class="entry-title">Something is waiting for you…</p>
+  <button class="heart-btn" id="entry-btn" onclick="enterSite()" aria-label="Enter">
+    <svg class="heart-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="hg" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#5BB8FF"/>
+          <stop offset="100%" stop-color="#0a2a6e"/>
+        </radialGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M50 85 C50 85 5 55 5 28 C5 12 18 3 30 3 C38 3 45 7 50 13 C55 7 62 3 70 3 C82 3 95 12 95 28 C95 55 50 85 50 85Z"
+            fill="url(#hg)" filter="url(#glow)" stroke="#1a78e6" stroke-width="2"/>
+    </svg>
+  </button>
+  <p class="tap-hint">💙 tap the heart 💙</p>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="app-content">
+
+    <!-- BOXES PHASE -->
+    <div id="boxes-phase">
+      <h1 class="phase-header">✨ Open Your Gifts ✨</h1>
+      <p class="phase-sub">Each box holds something from my heart 💛</p>
+      <div class="boxes-grid" id="boxes-grid"></div>
+    </div>
+
+    <!-- PROPOSAL PHASE -->
+    <div id="proposal-phase">
+      <h1 class="phase-header">💛 One More Thing… 💛</h1>
+
+      <div class="rings-container">
+        <!-- Male ring -->
+        <div class="ring-svg-wrap">
+          <svg class="ring-svg" width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="mring" cx="40%" cy="35%" r="70%">
+                <stop offset="0%" stop-color="#f0f0f0"/>
+                <stop offset="50%" stop-color="#b0b8c8"/>
+                <stop offset="100%" stop-color="#6a7585"/>
+              </radialGradient>
+              <filter id="ringshadow"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00000055"/></filter>
+            </defs>
+            <circle cx="55" cy="60" r="38" fill="none" stroke="url(#mring)" stroke-width="14" filter="url(#ringshadow)"/>
+            <ellipse cx="55" cy="26" rx="12" ry="8" fill="#e8e8e8" stroke="#aaa" stroke-width="1.5"/>
+            <text x="55" y="30" text-anchor="middle" font-size="10" fill="#888" font-family="serif">♂</text>
+          </svg>
+        </div>
+        <div class="ring-heart">💙</div>
+        <!-- Female ring -->
+        <div class="ring-svg-wrap">
+          <svg class="ring-svg" width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="fring" cx="40%" cy="35%" r="70%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#c8c8d8"/>
+                <stop offset="100%" stop-color="#888898"/>
+              </radialGradient>
+            </defs>
+            <circle cx="55" cy="60" r="38" fill="none" stroke="url(#fring)" stroke-width="14" filter="url(#ringshadow)"/>
+            <ellipse cx="55" cy="26" rx="14" ry="9" fill="#ffffff" stroke="#bbb" stroke-width="1.5"/>
+            <!-- Gem shape -->
+            <polygon points="55,20 62,25 62,30 55,32 48,30 48,25" fill="#aad4ff" stroke="#88aacc" stroke-width="1"/>
+            <polygon points="55,20 62,25 55,22" fill="#ddeeff" opacity="0.8"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="proposal-text" id="proposal-text" style="opacity:0">WILL YOU GO OUT WITH ME ?</div>
+
+      <div class="answer-btns" id="answer-btns" style="display:none">
+        <button class="answer-btn btn-yes" onclick="answerYes()">
+          💍<br>YES
+        </button>
+        <button class="answer-btn btn-no" onclick="answerNo()">
+          💔<br>NO
+        </button>
+      </div>
+    </div>
+
+  </div><!-- app-content -->
+</div><!-- app -->
+
+<!-- MESSAGE OVERLAY -->
+<div id="msg-overlay">
+  <div class="msg-card">
+    <div class="msg-box-num" id="msg-box-num">Box 1</div>
+    <div class="msg-text" id="msg-text"></div>
+    <button class="cupid-btn" id="msg-next-btn" onclick="nextBox()">
+      <span class="cupid-arrow">💘</span> Next <span class="cupid-arrow">➤</span>
+    </button>
+  </div>
+</div>
+
+<!-- RESULT: YES -->
+<div id="result-yes">
+  <div class="result-text">ITS OUR FIRST DATE DAY 😁</div>
+  <div class="result-emoji">💙❤️💛🌹💕</div>
+</div>
+
+<!-- RESULT: NO -->
+<div id="result-no">
+  <div class="result-text">Sorry, I overstepped…<br>but thank you for the precious memory !</div>
+  <div class="result-emoji">🌸</div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const messages = [
+  "I never knew someone like you… or at least my heart didn't know someone like you",
+  "You are beautiful in and out",
+  "Even my head is filled with the thoughts of you",
+  "I don't know if I'm worthy of your love",
+  "I don't think I'm the type to give it a second try… but if it's you, I might give 1000 tries",
+  "I'm sorry for all the things I put you through",
+  "I still like you 💙"
+];
+
+let currentBox = -1;
+let openedCount = 0;
+const audioCtx = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
+
+// ============================================================
+// STAR GENERATION
+// ============================================================
+function makeStars() {
+  const c = document.getElementById('stars-container');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 3 + 1;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --dur:${2 + Math.random()*4}s;
+      --delay:${Math.random()*4}s;
+    `;
+    c.appendChild(s);
+  }
+}
+
+// ============================================================
+// AMBIENT FLOATING HEARTS
+// ============================================================
+function makeAmbientHearts() {
+  const hearts = ['💙','💛','✨','💙','⭐','💙'];
+  const container = document.getElementById('app');
+  hearts.forEach((h, i) => {
+    const el = document.createElement('div');
+    el.className = 'ambient-heart';
+    el.textContent = h;
+    el.style.cssText = `
+      left:${10 + i*15}%;
+      --size:${1.2 + Math.random()}rem;
+      --dur:${8 + Math.random()*10}s;
+      --delay:${Math.random()*10}s;
+    `;
+    container.appendChild(el);
+  });
+}
+
+// ============================================================
+// SOFT MUSIC — Web Audio API (gentle tones)
+// ============================================================
+let musicNodes = [];
+function stopMusic() {
+  musicNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  musicNodes = [];
+}
+
+function playAmbientMusic() {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Soft pad: layered sine waves — peaceful, warm
+  const notes = [261.63, 329.63, 392, 440, 523.25]; // C4 E4 G4 A4 C5
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const pan = audioCtx.createStereoPanner();
+
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    // Gentle vibrato
+    const vib = audioCtx.createOscillator();
+    const vibGain = audioCtx.createGain();
+    vib.frequency.value = 4 + i * 0.3;
+    vibGain.gain.value = 1.5;
+    vib.connect(vibGain);
+    vibGain.connect(osc.frequency);
+    vib.start();
+    musicNodes.push(vib);
+
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.04 + i * 0.006, audioCtx.currentTime + 2 + i);
+
+    pan.pan.value = (i - 2) * 0.2;
+
+    osc.connect(gain);
+    gain.connect(pan);
+    pan.connect(audioCtx.destination);
+    osc.start();
+    musicNodes.push(osc);
+  });
+}
+
+function playViolinMusic() {
+  if (!audioCtx) return;
+  stopMusic();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Romantic ascending arpeggio (violin-like sawtooth with filter)
+  const melody = [392, 440, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99];
+  melody.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 1200;
+    filter.Q.value = 2;
+
+    const start = audioCtx.currentTime + i * 0.3;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.07, start + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 1.2);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(start);
+    osc.stop(start + 1.5);
+    musicNodes.push(osc);
+  });
+
+  // Continue with looping pad
+  setTimeout(playAmbientMusic, melody.length * 300 + 1000);
+}
+
+function playGoldenFlash() {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  // Short sparkle sound
+  [880, 1108, 1320].forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const t = audioCtx.currentTime + i * 0.06;
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.5);
+  });
+}
+
+function playCelebration() {
+  if (!audioCtx) return;
+  stopMusic();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  // Joyful ascending chords
+  const chords = [
+    [261.63, 329.63, 392, 523.25],
+    [293.66, 369.99, 440, 587.33],
+    [329.63, 415.3, 493.88, 659.25],
+    [349.23, 440, 523.25, 698.46]
+  ];
+  chords.forEach((chord, ci) => {
+    chord.forEach(freq => {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const t = audioCtx.currentTime + ci * 0.6;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.08, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + 1.5);
+    });
+  });
+}
+
+// ============================================================
+// ENTRY
+// ============================================================
+function enterSite() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  playAmbientMusic();
+
+  const entry = document.getElementById('entry-screen');
+  entry.classList.add('fade-out');
+
+  setTimeout(() => {
+    entry.style.display = 'none';
+    const app = document.getElementById('app');
+    app.style.display = 'block';
+    makeAmbientHearts();
+    buildBoxes();
+  }, 800);
+}
+
+// ============================================================
+// BUILD BOXES
+// ============================================================
+function buildBoxes() {
+  const grid = document.getElementById('boxes-grid');
+  grid.innerHTML = '';
+  messages.forEach((_, i) => {
+    const box = document.createElement('div');
+    box.className = 'mystery-box' + (i > 0 ? ' locked' : '');
+    box.id = `box-${i}`;
+    box.innerHTML = `
+      <div class="box-number">${i + 1}</div>
+      <div class="box-icon">${i === 0 ? '🎁' : '🔒'}</div>
+      <div class="box-checkmark">✓</div>
+    `;
+    if (i === 0) box.onclick = () => openBox(i);
+    grid.appendChild(box);
+  });
+}
+
+// ============================================================
+// OPEN BOX
+// ============================================================
+function openBox(i) {
+  const box = document.getElementById(`box-${i}`);
+  if (!box || box.classList.contains('locked') || box.classList.contains('opened')) return;
+
+  playGoldenFlash();
+
+  // Golden flash
+  box.classList.add('flash-open');
+
+  // Spawn gold particles from box
+  const rect = box.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let p = 0; p < 18; p++) {
+    const particle = document.createElement('div');
+    particle.className = 'gold-particle';
+    const angle = (p / 18) * Math.PI * 2;
+    const dist = 60 + Math.random() * 80;
+    particle.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      --tx:${Math.cos(angle)*dist}px;
+      --ty:${Math.sin(angle)*dist}px;
+      --dur:${0.6 + Math.random()*0.5}s;
+      --delay:${Math.random()*0.1}s;
+    `;
+    document.body.appendChild(particle);
+    setTimeout(() => particle.remove(), 1200);
+  }
+
+  setTimeout(() => {
+    box.classList.remove('flash-open');
+    box.classList.add('opened');
+    box.querySelector('.box-icon').textContent = '💛';
+    box.onclick = null;
+    currentBox = i;
+    showMessage(i);
+  }, 700);
+}
+
+// ============================================================
+// SHOW MESSAGE
+// ============================================================
+function showMessage(i) {
+  document.getElementById('msg-box-num').textContent = `Box ${i + 1} of ${messages.length}`;
+  document.getElementById('msg-text').textContent = messages[i];
+
+  const btn = document.getElementById('msg-next-btn');
+  if (i === messages.length - 1) {
+    btn.innerHTML = `<span class="cupid-arrow">💘</span> Continue <span class="cupid-arrow">💘</span>`;
+  } else {
+    btn.innerHTML = `<span class="cupid-arrow">💘</span> Next <span class="cupid-arrow">➤</span>`;
+  }
+
+  const overlay = document.getElementById('msg-overlay');
+  overlay.classList.add('visible');
+}
+
+// ============================================================
+// NEXT BOX
+// ============================================================
+function nextBox() {
+  const overlay = document.getElementById('msg-overlay');
+  overlay.classList.remove('visible');
+  openedCount++;
+
+  const nextIndex = currentBox + 1;
+
+  if (nextIndex >= messages.length) {
+    // All opened — go to proposal
+    setTimeout(showProposal, 400);
+    return;
+  }
+
+  // Unlock next box
+  const nextBox = document.getElementById(`box-${nextIndex}`);
+  if (nextBox) {
+    nextBox.classList.remove('locked');
+    nextBox.querySelector('.box-icon').textContent = '🎁';
+    nextBox.onclick = () => openBox(nextIndex);
+  }
+}
+
+// ============================================================
+// PROPOSAL
+// ============================================================
+function showProposal() {
+  document.getElementById('boxes-phase').style.display = 'none';
+  const phase = document.getElementById('proposal-phase');
+  phase.style.display = 'block';
+
+  playViolinMusic();
+
+  // Animate proposal text in
+  setTimeout(() => {
+    const pt = document.getElementById('proposal-text');
+    pt.style.opacity = '1';
+    pt.style.animation = 'popIn 1s cubic-bezier(0.34,1.56,0.64,1) both';
+  }, 500);
+
+  setTimeout(() => {
+    document.getElementById('answer-btns').style.display = 'flex';
+  }, 1500);
+}
+
+// ============================================================
+// ANSWERS
+// ============================================================
+function answerYes() {
+  stopMusic();
+  document.getElementById('app').style.display = 'none';
+  const result = document.getElementById('result-yes');
+  result.style.display = 'flex';
+  playCelebration();
+  launchHearts();
+}
+
+function answerNo() {
+  stopMusic();
+  document.getElementById('app').style.display = 'none';
+  const result = document.getElementById('result-no');
+  result.style.display = 'flex';
+}
+
+// ============================================================
+// HEART EXPLOSION
+// ============================================================
+function launchHearts() {
+  const heartTypes = ['❤️','💙','💛','💗','💖','💝','🌹','💕','❤️','💙','💙','❤️'];
+  const count = 80;
+
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const h = document.createElement('div');
+      h.className = 'flying-heart';
+      h.textContent = heartTypes[Math.floor(Math.random() * heartTypes.length)];
+
+      // Random starting edge
+      const edge = Math.floor(Math.random() * 4);
+      let sx, sy;
+      if (edge === 0) { sx = Math.random()*100; sy = 105; }
+      else if (edge === 1) { sx = Math.random()*100; sy = -5; }
+      else if (edge === 2) { sx = -5; sy = Math.random()*100; }
+      else { sx = 105; sy = Math.random()*100; }
+
+      const tx = (50 - sx) * (0.8 + Math.random()) + 'vw';
+      const ty = (50 - sy) * (0.8 + Math.random()) + 'vh';
+      const rot = (Math.random() - 0.5) * 360;
+      const dur = 1.5 + Math.random() * 2;
+      const delay = Math.random() * 0.5;
+
+      h.style.cssText = `
+        left:${sx}vw; top:${sy}vh;
+        --tx:${tx}; --ty:${ty};
+        --rot:${rot}deg;
+        --dur:${dur}s;
+        --delay:${delay}s;
+        font-size:${1.2 + Math.random()*1.5}rem;
+      `;
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), (dur + delay) * 1000 + 100);
+    }, i * 60);
+  }
+
+  // Repeat waves
+  setTimeout(launchHearts, 3500);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+makeStars();
+</script>
+</body>
+</html>
