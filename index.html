@@ -208,9 +208,8 @@ function toggleVisibility() {
   input.type = input.type === 'password' ? 'text' : 'password';
 }
 
-// Rate limiting
-let attempts = 0;
-let lockedUntil = 0;
+// Countdown timer reference
+let countdownInterval = null;
 
 async function checkPass() {
   const input    = document.getElementById('passInput');
@@ -218,21 +217,14 @@ async function checkPass() {
   const loading  = document.getElementById('loading');
   const btn      = document.getElementById('submitBtn');
 
-  // Check lockout
-  if (Date.now() < lockedUntil) {
-    const secs = Math.ceil((lockedUntil - Date.now()) / 1000);
-    showError(`Too many attempts 🔒 Wait ${secs}s`);
-    return;
-  }
-
   const pass = input.value.trim();
   if (!pass) { showError('Please enter the password 💙'); return; }
 
   // Show loading state
   errorMsg.style.display = 'none';
   loading.style.display  = 'flex';
-  btn.disabled    = true;
-  input.disabled  = true;
+  btn.disabled   = true;
+  input.disabled = true;
 
   try {
     const res  = await fetch('/api/check', {
@@ -242,33 +234,30 @@ async function checkPass() {
     });
 
     const data = await res.json();
+    loading.style.display = 'none';
 
     if (data.success) {
+      // ✅ Correct password
       document.getElementById('loadingText').textContent = 'Welcome 💙';
+      loading.style.display = 'flex';
       setTimeout(() => { window.location.href = '/proposal.html'; }, 800);
+
+    } else if (data.locked) {
+      // 🔒 Server says locked — start server-driven countdown
+      // Even if user refreshes, server will still be locked (Redis TTL)
+      input.value = '';
+      startLockoutCountdown(data.wait || 30);
+
     } else {
-      attempts++;
-      loading.style.display = 'none';
+      // ❌ Wrong password — show remaining attempts from server
+      input.value    = '';
       btn.disabled   = false;
       input.disabled = false;
-      input.value    = '';
       input.focus();
-
-      if (attempts >= 5) {
-        lockedUntil = Date.now() + 30000; // 30 second lockout
-        showError('Too many attempts 🔒 Wait 30 seconds');
-        btn.disabled   = true;
-        input.disabled = true;
-        setTimeout(() => {
-          attempts = 0;
-          btn.disabled   = false;
-          input.disabled = false;
-          errorMsg.style.display = 'none';
-        }, 30000);
-      } else {
-        showError(`Wrong password 💔 (${5 - attempts} tries left)`);
-      }
+      const remaining = data.remaining ?? '?';
+      showError(`Wrong password 💔 — ${remaining} attempt${remaining === 1 ? '' : 's'} left`);
     }
+
   } catch (err) {
     loading.style.display = 'none';
     btn.disabled   = false;
@@ -276,6 +265,56 @@ async function checkPass() {
     showError('Connection error. Try again 💙');
   }
 }
+
+// ── Server-driven lockout countdown ─────────────────────────
+// Starts a visual countdown using the wait seconds from Redis TTL
+// Refreshing the page won't help — server stays locked
+function startLockoutCountdown(seconds) {
+  const btn      = document.getElementById('submitBtn');
+  const input    = document.getElementById('passInput');
+  const errorMsg = document.getElementById('errorMsg');
+
+  btn.disabled   = true;
+  input.disabled = true;
+
+  let remaining = seconds;
+
+  function tick() {
+    showError(`🔒 Too many attempts — wait ${remaining}s`);
+    if (remaining <= 0) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+      btn.disabled   = false;
+      input.disabled = false;
+      input.value    = '';
+      input.focus();
+      errorMsg.style.display = 'none';
+    }
+    remaining--;
+  }
+
+  tick(); // show immediately
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(tick, 1000);
+}
+
+// On page load — check if this IP is already locked on the server
+// This handles the case where user refreshes during lockout
+window.addEventListener('load', async () => {
+  try {
+    const res  = await fetch('/api/check', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ password: '' }) // empty triggers lockout check
+    });
+    const data = await res.json();
+    if (data.locked && data.wait > 0) {
+      startLockoutCountdown(data.wait);
+    }
+  } catch (e) {
+    // Server not reachable — ignore on load
+  }
+});
 
 function showError(msg) {
   const errorMsg = document.getElementById('errorMsg');
